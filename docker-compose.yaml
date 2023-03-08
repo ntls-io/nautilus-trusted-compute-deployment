@@ -1,0 +1,80 @@
+# Nautilus Wallet demo and staging deployment
+
+networks:
+  vault-dev:
+  vault-staging:
+  vault-main:
+
+services:
+  # Docs: https://github.com/nginx-proxy/nginx-proxy
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    networks:
+      - vault-dev
+      - vault-staging
+      - vault-main
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /etc/tls:/etc/nginx/certs:ro
+
+  vault-dev-api:
+    image: ghcr.io/ntls-io/sgx-vault-hw:main
+    environment:
+      VIRTUAL_HOST: nautilus-trust-dev-api.ntls.io
+      BIND_ADDR: "0.0.0.0:8080"
+      CERT_NAME: ntls-api
+    networks:
+      - vault-dev
+    volumes:
+      - vault-store-dev:/app/vault_store
+    read_only: true
+    init: true
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    expose:
+      - "8080"
+
+  vault-staging-api:
+    image: ghcr.io/ntls-io/sgx-vault-hw:main
+    environment:
+      VIRTUAL_HOST: nautilus-trust-staging-api.ntls.io
+      BIND_ADDR: "0.0.0.0:8080"
+      CERT_NAME: ntls-api
+    networks:
+      - vault-staging
+    volumes:
+      - vault-store-staging:/app/vault_store
+    read_only: true
+    init: true
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    expose:
+      - "8080"
+
+  vault-main-api:
+    image: ghcr.io/ntls-io/sgx-vault-hw:main
+    environment:
+      VIRTUAL_HOST: nautilus-trust-main-api.ntls.io
+      BIND_ADDR: "0.0.0.0:8080"
+      CERT_NAME: ntls-api
+    networks:
+      - vault-main
+    volumes:
+      - vault-store-main:/app/vault_store
+    read_only: true
+    init: true
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    expose:
+      - "8080"
+
+volumes:
+  vault-store-dev:
+  vault-store-staging:
+  vault-store-main:
