@@ -1,6 +1,9 @@
 # Nautilus Wallet demo and staging deployment
 
 networks:
+  nautilus-trust-dev:
+  nautilus-trust-staging:
+  nautilus-trust-main:
   vault-dev:
   vault-staging:
   vault-main:
@@ -10,26 +13,29 @@ services:
   nginx-proxy:
     image: nginxproxy/nginx-proxy:alpine
     networks:
+      - nautilus-trust-dev
+      - nautilus-trust-staging
+      - nautilus-trust-main
       - vault-dev
       - vault-staging
       - vault-main
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
       - /etc/tls:/etc/nginx/certs:ro
 
-  vault-dev-api:
+  nautilus-trust-dev-api:
     image: ghcr.io/ntls-io/sgx-vault-hw:main
     environment:
       VIRTUAL_HOST: nautilus-trust-dev-api.ntls.io
       BIND_ADDR: "0.0.0.0:8080"
       CERT_NAME: ntls-api
     networks:
-      - vault-dev
+      - nautilus-trust-dev
     volumes:
-      - vault-store-dev:/app/vault_store
+      - nautilus-trust-store-dev:/app/vault_store
     read_only: true
     init: true
     devices:
@@ -38,16 +44,16 @@ services:
     expose:
       - "8080"
 
-  vault-staging-api:
+  nautilus-trust-staging-api:
     image: ghcr.io/ntls-io/sgx-vault-hw:main
     environment:
       VIRTUAL_HOST: nautilus-trust-staging-api.ntls.io
       BIND_ADDR: "0.0.0.0:8080"
       CERT_NAME: ntls-api
     networks:
-      - vault-staging
+      - nautilus-trust-staging
     volumes:
-      - vault-store-staging:/app/vault_store
+      - nautilus-trust-store-staging:/app/vault_store
     read_only: true
     init: true
     devices:
@@ -56,16 +62,16 @@ services:
     expose:
       - "8080"
 
-  vault-main-api:
+  nautilus-trust-main-api:
     image: ghcr.io/ntls-io/sgx-vault-hw:main
     environment:
       VIRTUAL_HOST: nautilus-trust-main-api.ntls.io
       BIND_ADDR: "0.0.0.0:8080"
       CERT_NAME: ntls-api
     networks:
-      - vault-main
+      - nautilus-trust-main
     volumes:
-      - vault-store-main:/app/vault_store
+      - nautilus-trust-store-main:/app/vault_store
     read_only: true
     init: true
     devices:
@@ -74,7 +80,61 @@ services:
     expose:
       - "8080"
 
+  vault-dev-backend-services:
+    image: ghcr.io/ntls-io/vault-backend-services:deploy-backend-services
+    environment:
+      VIRTUAL_HOST: vault-dev-api.ntls.io
+      VIRTUAL_PATH: /
+      BIND_ADDR: "0.0.0.0:8000"
+      CERT_NAME: ntls-api
+
+      PRIMARY_ORIGIN: "https://vault-dev-api.ntls.io"
+      STAGING_MODE: 1
+      VAULT_DB_CONNECTION_STRING: ${NTLS_DEV_VAULT_ADDRESS_DB_CONNECTION_STRING}
+      VAULT_DB_NAME: ${NTLS_DEV_VAULT_ADDRESS_DB_DATABASE_NAME}
+    networks:
+      - vault-dev
+    init: true
+    expose:
+      - "8000"
+
+  vault-staging-backend-services:
+    image: ghcr.io/ntls-io/vault-backend-services:deploy-backend-services
+    environment:
+      VIRTUAL_HOST: vault-staging-api.ntls.io
+      VIRTUAL_PATH: /
+      BIND_ADDR: "0.0.0.0:8000"
+      CERT_NAME: ntls-api
+
+      PRIMARY_ORIGIN: "https://vault-staging-api.ntls.io"
+      STAGING_MODE: 1
+      VAULT_DB_CONNECTION_STRING: ${NTLS_STAGING_VAULT_ADDRESS_DB_CONNECTION_STRING}
+      VAULT_DB_NAME: ${NTLS_STAGING_VAULT_ADDRESS_DB_DATABASE_NAME}
+    networks:
+      - vault-staging
+    init: true
+    expose:
+      - "8000"
+
+  vault-main-backend-services:
+    image: ghcr.io/ntls-io/vault-backend-services:deploy-backend-services
+    environment:
+      VIRTUAL_HOST: vault-main-api.ntls.io
+      VIRTUAL_PATH: /
+      BIND_ADDR: "0.0.0.0:8000"
+      CERT_NAME: ntls-api
+
+      PRIMARY_ORIGIN: "https://vault-main-api.ntls.io"
+      STAGING_MODE: 1
+      VAULT_DB_CONNECTION_STRING: ${NTLS_MAIN_VAULT_ADDRESS_DB_CONNECTION_STRING}
+      VAULT_DB_NAME: ${NTLS_MAIN_VAULT_ADDRESS_DB_DATABASE_NAME}
+    networks:
+      - vault-main
+    init: true
+    expose:
+      - "8000"
+
 volumes:
-  vault-store-dev:
-  vault-store-staging:
-  vault-store-main:
+  nautilus-trust-store-dev:
+  nautilus-trust-store-staging:
+  nautilus-trust-store-main:
