@@ -27,7 +27,7 @@ services:
       - /etc/tls:/etc/nginx/certs:ro
 
   nautilus-trust-dev-api:
-    image: ghcr.io/ntls-io/sgx-vault-hw:main
+    image: ghcr.io/ntls-io/sgx-vault-hw:box-testing
     environment:
       VIRTUAL_HOST: nautilus-trust-dev-api.ntls.io
       BIND_ADDR: "0.0.0.0:8080"
@@ -45,7 +45,7 @@ services:
       - "8080"
 
   nautilus-trust-staging-api:
-    image: ghcr.io/ntls-io/sgx-vault-hw:main
+    image: ghcr.io/ntls-io/sgx-vault-hw:box-testing
     environment:
       VIRTUAL_HOST: nautilus-trust-staging-api.ntls.io
       BIND_ADDR: "0.0.0.0:8080"
